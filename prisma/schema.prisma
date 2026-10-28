@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum Level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  name         String
+  passwordHash String   @map("password_hash")
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  coursesCreated Course[]
+  enrollments    Enrollment[]
+
+  @@map("users")
+}
+
+// Sección "4 cuadros" del wireframe
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  imageUrl    String?  @map("image_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  courses Course[]
+
+  @@map("categories")
+}
+
+// Sección "3 círculos" del wireframe
+model Instructor {
+  id        Int      @id @default(autoincrement())
+  name      String
+  headline  String
+  bio       String?
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  courses Course[]
+
+  @@map("instructors")
+}
+
+// Carrusel, lista lateral y grid de cards del wireframe
+model Course {
+  id            Int      @id @default(autoincrement())
+  title         String
+  slug          String   @unique
+  description   String?
+  price         Decimal  @db.Decimal(10, 2)
+  imageUrl      String?  @map("image_url")
+  level         Level    @default(BEGINNER)
+  durationHours Int      @map("duration_hours")
+  rating        Decimal  @default(0) @db.Decimal(2, 1)
+  featured      Boolean  @default(false)
+  categoryId    Int      @map("category_id")
+  instructorId  Int      @map("instructor_id")
+  createdById   Int?     @map("created_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  category    Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  instructor  Instructor   @relation(fields: [instructorId], references: [id], onDelete: Restrict)
+  createdBy   User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  enrollments Enrollment[]
+
+  @@index([categoryId])
+  @@index([instructorId])
+  @@index([featured])
+  @@map("courses")
+}
+
+// Relación N:M entre usuarios y cursos ("Mis cursos")
+model Enrollment {
+  userId    Int      @map("user_id")
+  courseId  Int      @map("course_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([userId, courseId])
+  @@index([courseId])
+  @@map("enrollments")
+}
