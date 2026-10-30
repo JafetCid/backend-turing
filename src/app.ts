@@ -1,4 +1,6 @@
+import "./types/express";
 import express from "express";
+import type { RequestHandler } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -11,23 +13,48 @@ import { openApiSpec } from "./docs/openapi";
 
 const app = express();
 
+const adaptHelmet = (
+  middleware: ReturnType<typeof helmet>,
+): RequestHandler => {
+  return (req, res, next) => {
+    middleware(req, res, (error?: unknown) => {
+      if (error) {
+        next(error);
+      } else {
+        next();
+      }
+    });
+  };
+};
+
+const docsHelmet = adaptHelmet(
+  helmet({ contentSecurityPolicy: false }),
+);
+
+const defaultHelmet = adaptHelmet(helmet());
+
 app.disable("x-powered-by");
 
 // Swagger UI necesita scripts inline: se monta antes de helmet con CSP propia desactivada
 app.get("/api/docs.json", (_req, res) => {
   res.json(openApiSpec);
 });
+
 app.use(
   "/api/docs",
-  helmet({ contentSecurityPolicy: false }),
+  docsHelmet,
   swaggerUi.serve,
   swaggerUi.setup(openApiSpec, {
     customSiteTitle: "Turing IA · API Docs",
-    swaggerOptions: { persistAuthorization: true, displayRequestDuration: true },
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+    },
   }),
 );
 
-app.use(helmet());
+app.use(defaultHelmet);
+
 app.use(cors({ origin: env.CORS_ORIGIN.split(",").map((o) => o.trim()), credentials: true }));
 app.use(express.json({ limit: "100kb" }));
 app.use(
