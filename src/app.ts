@@ -29,12 +29,13 @@ app.get("/api/docs.json", (_req, res) => {
 app.use(
   "/api/docs",
   docsHelmet,
-  swaggerUi.serve,
+  swaggerUi.serveFiles(openApiSpec),
   swaggerUi.setup(openApiSpec, {
     customSiteTitle: "Turing IA · API Docs",
     swaggerOptions: {
       persistAuthorization: true,
       displayRequestDuration: true,
+      url: "/api/docs.json",
     },
   }),
 );
