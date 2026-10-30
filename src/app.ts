@@ -13,25 +13,11 @@ import { openApiSpec } from "./docs/openapi";
 
 const app = express();
 
-const adaptHelmet = (
-  middleware: ReturnType<typeof helmet>,
-): RequestHandler => {
-  return (req, res, next) => {
-    middleware(req, res, (error?: unknown) => {
-      if (error) {
-        next(error);
-      } else {
-        next();
-      }
-    });
-  };
-};
+const docsHelmet = helmet({
+  contentSecurityPolicy: false,
+}) as unknown as RequestHandler;
 
-const docsHelmet = adaptHelmet(
-  helmet({ contentSecurityPolicy: false }),
-);
-
-const defaultHelmet = adaptHelmet(helmet());
+const defaultHelmet = helmet() as unknown as RequestHandler;
 
 app.disable("x-powered-by");
 
