@@ -9,7 +9,7 @@ import { apiRouter } from "./routes";
 import { errorHandler, notFound } from "./middlewares/errorHandler";
 import { openApiSpec } from "./docs/openapi";
 
-export const app = express();
+const app = express();
 
 app.disable("x-powered-by");
 
@@ -45,3 +45,5 @@ if (env.NODE_ENV !== "test") app.use(morgan("dev"));
 app.use("/api/v1", apiRouter);
 app.use(notFound);
 app.use(errorHandler);
+
+export default app;
